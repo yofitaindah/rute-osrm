@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <title>Jakarta Route Planner - Interactive Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body { 
+      height: 100%; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f8fafc;
+    }
+
+    #map { 
+      height: 100%; 
+      width: 100%; 
+      position: relative;
+    }
+
+    /* Modern Control Panel */
+    .control-panel {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      min-width: 320px;
+      max-width: 380px;
+      transition: all 0.3s ease;
+    }
+
+    .control-panel:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .panel-header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .panel-header .icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+    }
+
+    /* Route Info Card */
+    .route-info {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.4s ease;
+    }
+
+    .route-info.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .route-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Control Buttons */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-transform: capitalize;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    /* Profile Selector */
+    .profile-selector {
+      margin-bottom: 16px;
+    }
+
+    .profile-selector label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+    }
+
+    .profile-selector select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      transition: border-color 0.3s ease;
+    }
+
+    .profile-selector select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Location Input */
+    .location-inputs {
+      margin-bottom: 16px;
+    }
+
+    .input-group {
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #374151;
+      font-size: 13px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Loading Animation */
+    .loading {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .loading.show {
+      display: flex;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e5e7eb;
+      border-top: 2px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Error Message */
+    .error-message {
+      background: #fef2f2;
+      color: #dc2626;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border-left: 4px solid #dc2626;
+      font-size: 14px;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .control-panel {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        min-width: auto;
+        max-width: none;
+      }
+      
+      .controls {
+        grid-template-columns: 1fr;
+      }
+      
+      .route-stats {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+
+    /* Custom Marker Styles */
+    .custom-marker {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border: 3px solid white;
+    }
+
+    .marker-start {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .marker-end {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    /* Route Summary */
+    .route-summary {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div class="control-panel">
+  <div class="panel-header">
+    <div class="icon">
+      <i class="fas fa-route"></i>
+    </div>
+    <h1>Jakarta Route Planner</h1>
+  </div>
+
+  <div class="profile-selector">
+    <label for="routeProfile">Mode Transportasi:</label>
+    <select id="routeProfile">
+      <option value="driving">🚗 Mobil</option>
+      <option value="walking">🚶 Jalan Kaki</option>
+      <option value="cycling">🚲 Sepeda</option>
+    </select>
+  </div>
+
+  <div class="location-inputs">
+    <div class="input-group">
+      <label for="startLocation">Lokasi Start:</label>
+      <input type="text" id="startLocation" placeholder="Masukkan alamat start..." readonly>
+    </div>
+    <div class="input-group">
+      <label for="endLocation">Lokasi Finish:</label>
+      <input type="text" id="endLocation" placeholder="Masukkan alamat finish..." readonly>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-primary" id="btnSwap">
+      <i class="fas fa-exchange-alt"></i> Tukar
+    </button>
+    <button class="btn btn-secondary" id="btnReset">
+      <i class="fas fa-undo"></i> Reset
+    </button>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-secondary" id="btnCenter">
+      <i class="fas fa-crosshairs"></i> Tengah
+    </button>
+    <button class="btn btn-secondary" id="btnClear">
+      <i class="fas fa-trash"></i> Hapus
+    </button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <span>Menghitung rute...</span>
+  </div>
+
+  <div class="error-message" id="errorMessage"></div>
+
+  <div class="route-info" id="routeInfo">
+    <div class="route-stats">
+      <div class="stat-item">
+        <span class="stat-value" id="distance">-</span>
+        <span class="stat-label">Kilometer</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="duration">-</span>
+        <span class="stat-label">Menit</span>
+      </div>
+    </div>
+    <div class="route-summary" id="routeSummary">
+      Geser marker start dan finish untuk menghitung rute baru
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet JS -->
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+
+<script>
+  // Initialize map (Jakarta)
+  const map = L.map('map').setView([-6.2, 106.816666], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 20,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Default locations
+  const defaultStart = L.latLng(-6.175392, 106.827153); // Monas
+  const defaultEnd = L.latLng(-6.104295, 106.886355); // Tanjung Priok
+
+  // Custom marker icons
+  const startIcon = L.divIcon({
+    html: '<div class="custom-marker marker-start">A</div>',
+    className: 'custom-div-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+  });
+
+  const endIcon = L.divIcon({
+    html: '<div class="custom-marker marker-end">B</div>',
+    className: 'custom-div-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+  });
+
+  // Create markers
+  const startMarker = L.marker(defaultStart, { 
+    draggable: true, 
+    icon: startIcon 
+  }).addTo(map).bindPopup('<b>Start Point</b><br>Geser untuk mengubah lokasi');
+
+  const endMarker = L.marker(defaultEnd, { 
+    draggable: true, 
+    icon: endIcon 
+  }).addTo(map).bindPopup('<b>Finish Point</b><br>Geser untuk mengubah lokasi');
+
+  // Route layer
+  let routeLayer = null;
+  let routeData = null;
+
+  // UI Elements
+  const routeProfile = document.getElementById('routeProfile');
+  const startLocationInput = document.getElementById('startLocation');
+  const endLocationInput = document.getElementById('endLocation');
+  const routeInfo = document.getElementById('routeInfo');
+  const distanceEl = document.getElementById('distance');
+  const durationEl = document.getElementById('duration');
+  const routeSummaryEl = document.getElementById('routeSummary');
+  const loadingEl = document.getElementById('loading');
+  const errorEl = document.getElementById('errorMessage');
+
+  // Route calculation with OSRM API
+  async function calculateRoute() {
+    const start = startMarker.getLatLng();
+    const end = endMarker.getLatLng();
+    const profile = routeProfile.value;
+
+    showLoading(true);
+    hideError();
+
+    // OSRM requires lon,lat format
+    const coords = `${start.lng},${start.lat};${end.lng},${end.lat}`;
+    const url = `https://router.project-osrm.org/route/v1/${profile}/${coords}?overview=full&geometries=geojson&steps=true&alternatives=false`;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const data = await response.json();
+
+      if (!data.routes || data.routes.length === 0) {
+        throw new Error('Rute tidak ditemukan untuk koordinat tersebut');
+      }
+
+      routeData = data.routes[0];
+      const geometry = routeData.geometry;
+
+      // Remove old route
+      if (routeLayer) routeLayer.remove();
+
+      // Draw new route
+      routeLayer = L.geoJSON(geometry, {
+        style: {
+          color: '#3b82f6',
+          weight: 6,
+          opacity: 0.8,
+          lineCap: 'round',
+          lineJoin: 'round'
+        }
+      }).addTo(map);
+
+      // Fit bounds with padding
+      map.fitBounds(routeLayer.getBounds(), { 
+        padding: [50, 50],
+        maxZoom: 16 
+      });
+
+      // Update UI
+      updateRouteInfo();
+      updateLocationInputs();
+      
+    } catch (error) {
+      console.error('Route calculation error:', error);
+      showError(`Gagal menghitung rute: ${error.message}`);
+      hideRouteInfo();
+    }
+
+    showLoading(false);
+  }
+
+  // Update route information display
+  function updateRouteInfo() {
+    if (!routeData) return;
+
+    const km = (routeData.distance / 1000).toFixed(1);
+    const minutes = Math.round(routeData.duration / 60);
+    const hours = Math.floor(minutes / 60);
+    const remainingMins = minutes % 60;
+    
+    let durationText;
+    if (hours > 0) {
+      durationText = `${hours}j ${remainingMins}m`;
+    } else {
+      durationText = `${minutes}m`;
+    }
+
+    distanceEl.textContent = km;
+    durationEl.textContent = durationText;
+
+    const profile = routeProfile.value;
+    const profileText = profile === 'driving' ? 'berkendara' : 
+                       profile === 'walking' ? 'berjalan kaki' : 'bersepeda';
+    
+    routeSummaryEl.innerHTML = `
+      <strong>Mode:</strong> ${profileText}<br>
+      <strong>Estimasi waktu:</strong> ${durationText} untuk ${km} km<br>
+      <small>Data dari OpenStreetMap OSRM</small>
+    `;
+
+    routeInfo.classList.add('show');
+  }
+
+  // Hide route information
+  function hideRouteInfo() {
+    routeInfo.classList.remove('show');
+  }
+
+  // Update location input fields with reverse geocoding (simplified)
+  async function updateLocationInputs() {
+    const start = startMarker.getLatLng();
+    const end = endMarker.getLatLng();
+    
+    startLocationInput.value = `${start.lat.toFixed(6)}, ${start.lng.toFixed(6)}`;
+    endLocationInput.value = `${end.lat.toFixed(6)}, ${end.lng.toFixed(6)}`;
+  }
+
+  // Show/hide loading
+  function showLoading(show) {
+    loadingEl.classList.toggle('show', show);
+  }
+
+  // Show error message
+  function showError(message) {
+    errorEl.textContent = message;
+    errorEl.classList.add('show');
+    setTimeout(() => hideError(), 5000);
+  }
+
+  // Hide error message
+  function hideError() {
+    errorEl.classList.remove('show');
+  }
+
+  // Event listeners for marker drag
+  startMarker.on('dragend', calculateRoute);
+  endMarker.on('dragend', calculateRoute);
+
+  // Profile change event
+  routeProfile.addEventListener('change', () => {
+    if (routeData) calculateRoute();
+  });
+
+  // Button event listeners
+  document.getElementById('btnSwap').addEventListener('click', () => {
+    const startPos = startMarker.getLatLng();
+    const endPos = endMarker.getLatLng();
+    
+    startMarker.setLatLng(endPos);
+    endMarker.setLatLng(startPos);
+    calculateRoute();
+  });
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    startMarker.setLatLng(defaultStart);
+    endMarker.setLatLng(defaultEnd);
+    routeProfile.value = 'driving';
+    calculateRoute();
+  });
+
+  document.getElementById('btnCenter').addEventListener('click', () => {
+    if (routeLayer) {
+      map.fitBounds(routeLayer.getBounds(), { 
+        padding: [50, 50],
+        maxZoom: 16 
+      });
+    } else {
+      map.setView([-6.2, 106.816666], 12);
+    }
+  });
+
+  document.getElementById('btnClear').addEventListener('click', () => {
+    if (routeLayer) {
+      routeLayer.remove();
+      routeLayer = null;
+      routeData = null;
+    }
+    hideRouteInfo();
+    hideError();
+  });
+
+  // Initialize with default route
+  setTimeout(() => {
+    calculateRoute();
+  }, 500);
+
+  // Add map click handler for setting new waypoints
+  map.on('click', function(e) {
+    // Optional: Allow users to click on map to set new start/end points
+    // This could be implemented with a toggle mode
+  });
+
+  // Update location inputs on page load
+  updateLocationInputs();
+</script>
+
+</body>
+</html>
