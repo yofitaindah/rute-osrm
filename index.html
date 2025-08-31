@@ -45,7 +45,7 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     font-size: 22px;
@@ -309,6 +309,57 @@
       display: block;
     }
 
+
+    .intro-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.intro-content {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  max-width: 320px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  animation: fadeIn 0.3s ease;
+}
+
+.intro-content h2 {
+  margin-bottom: 12px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.intro-content p {
+  font-size: 14px;
+  color: #475569;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.intro-content button {
+  margin-top: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from {opacity: 0; transform: scale(0.95);}
+  to {opacity: 1; transform: scale(1);}
+}
+
+
     /* Responsive Design */
     @media (max-width: 768px) {
     .control-panel {
@@ -322,6 +373,10 @@
       overflow-y: auto;
       transform: translateY(100%);
       transition: transform 0.3s ease;
+    }
+
+    .fab {
+      display: flex;
     }
 
       .control-panel.show {
@@ -380,6 +435,23 @@
 <div class="fab" id="fabBtn">
   <i class="fas fa-bars"></i>
 </div>
+
+<!-- Intro Overlay -->
+<div id="introOverlay" class="intro-overlay">
+  <div class="intro-content">
+    <h2>Selamat datang 👋</h2>
+    <p>
+      Geser <b>marker A</b> (hijau) dan <b>marker B</b> (merah) untuk menghitung rute.  
+      Hasil rute akan menampilkan <b>jarak</b> dan <b>durasi perjalanan</b> sesuai mode transportasi.  
+    </p>
+    <p>
+      Gunakan tombol <i class="fas fa-exchange-alt"></i> untuk tukar start/finish,  
+      atau <i class="fas fa-undo"></i> untuk reset.
+    </p>
+    <button id="closeIntro">Mengerti</button>
+  </div>
+</div>
+
 
 <div class="control-panel" id="controlPanel">
   <div class="panel-header">
@@ -710,6 +782,17 @@
     }
   });
 </script>
+
+<script>
+  const introOverlay = document.getElementById("introOverlay");
+  const closeIntro = document.getElementById("closeIntro");
+
+  // Tutup manual
+  closeIntro.addEventListener("click", () => {
+    introOverlay.style.display = "none";
+  });
+</script>
+
 
 </body>
 </html>
