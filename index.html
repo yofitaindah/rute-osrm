@@ -585,10 +585,14 @@
 
   // Route calculation with OSRM API
   async function calculateRoute() {
+    if (!startMarker || !endMarker) return;
+
+
     const start = startMarker.getLatLng();
     const end = endMarker.getLatLng();
     const profile = routeProfile.value;
 
+    hideRouteInfo();
     showLoading(true);
     hideError();
 
@@ -711,7 +715,7 @@
 
   // Profile change event
   routeProfile.addEventListener('change', () => {
-    if (routeData) calculateRoute();
+    calculateRoute();
   });
 
   // Button event listeners
