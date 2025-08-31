@@ -35,6 +35,35 @@
       position: relative;
     }
 
+    /* FAB Button */
+    .fab {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1100;
+    transition: transform 0.2s ease;
+  }
+
+  .fab:active {
+    transform: scale(0.95);
+  }
+
+  /* Panel default hidden di mobile */
+  .control-panel {
+    transition: transform 0.3s ease;
+  }
+
     /* Modern Control Panel */
     .control-panel {
       position: absolute;
@@ -282,12 +311,21 @@
 
     /* Responsive Design */
     @media (max-width: 768px) {
-      .control-panel {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        min-width: auto;
-        max-width: none;
+    .control-panel {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      top: auto;
+      border-radius: 16px 16px 0 0;
+      max-height: 70%;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+
+      .control-panel.show {
+        transform: translateY(0);
       }
       
       .controls {
@@ -339,7 +377,11 @@
 
 <div id="map"></div>
 
-<div class="control-panel">
+<div class="fab" id="fabBtn">
+  <i class="fas fa-bars"></i>
+</div>
+
+<div class="control-panel" id="controlPanel">
   <div class="panel-header">
     <div class="icon">
       <i class="fas fa-route"></i>
@@ -651,6 +693,22 @@
 
   // Update location inputs on page load
   updateLocationInputs();
+</script>
+
+<script>
+  const fabBtn = document.getElementById("fabBtn");
+  const controlPanel = document.getElementById("controlPanel");
+
+  fabBtn.addEventListener("click", () => {
+    controlPanel.classList.toggle("show");
+
+    // ganti icon FAB kalau panel terbuka/tertutup
+    if (controlPanel.classList.contains("show")) {
+      fabBtn.innerHTML = '<i class="fas fa-times"></i>';
+    } else {
+      fabBtn.innerHTML = '<i class="fas fa-bars"></i>';
+    }
+  });
 </script>
 
 </body>
